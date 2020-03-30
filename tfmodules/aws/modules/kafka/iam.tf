@@ -1,5 +1,5 @@
 resource "aws_iam_role" "kafka_role" {
-  name = "kafka-${var.environment}"
+  name = "${var.environment}-${var.kafka_service_name}-role"
 
   assume_role_policy = <<EOF
 {
@@ -17,14 +17,14 @@ EOF
 
 /* Profile is how we attach role to instances */
 resource "aws_iam_instance_profile" "kafka_profile" {
-  name  = "kafka_profile-${var.environment}"
-  role  = "${aws_iam_role.kafka_role.name}"
+  name  = "${var.environment}-${var.kafka_service_name}-profile"
+  role  = aws_iam_role.kafka_role.name
 }
 
 
 resource "aws_iam_role_policy" "kafka_policy" {
-  name = "kafka_policy-${var.environment}"
-  role = "${aws_iam_role.kafka_role.id}"
+  name = "${var.environment}-${var.kafka_service_name}-kafka_policy"
+  role = aws_iam_role.kafka_role.id
 
   policy = <<EOF
 {

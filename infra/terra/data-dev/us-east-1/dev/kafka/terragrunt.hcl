@@ -1,55 +1,53 @@
 locals {
-  ##--Region
   region_vars = read_terragrunt_config(find_in_parent_folders("region.hcl"))
   region   = local.region_vars.locals.aws_region
-       ##OR
-  #region = "us-east-1"
-  ##--
+  azs   = local.region_vars.locals.aws_azs
 
-  ##--
-  # Automatically load environment-level variables
   environment_vars = read_terragrunt_config(find_in_parent_folders("env.hcl"))
-  # Extract out common variables for reuse
   env = local.environment_vars.locals.environment
-  env2 = "dev2"
-  ##--  
+  
+  kafka_service_name = "kafka"
+  zookeeper_service_name = "zookeeper"
+
 }
 
-# Terragrunt will copy the Terraform configurations specified by the source parameter, along with any files in the
-# working directory, into a temporary folder, and execute your Terraform commands in that folder.
 terraform {
-  source = "git::git@gitlab.com:glt-slower/ucsd/tfmodules.git//aws/modules/kafka?"
+  ### +++ Specify your repository and tfmodules
+  source = "git::git@gitlab.com:glt-slower/glt-ucsd/mytfmodules.git//aws/modules/kafka?"
 }
-
-# Include all settings from the root terragrunt.hcl file
-#include {
-#  path = find_in_parent_folders()
-#}
-
-#include = {
-#   path = "${find_in_parent_folders()}"
-#}
-
- #required_inputs_files {
- #     "${get_terragrunt_dir()}/${find_in_parent_folders("region.hcl")}",
-#}
-
 
 # These are the variables we have to pass in to use the module specified in the terragrunt configuration above
 inputs = {
-  vpc_cidr    = "10.10.0.0/16"
-  environment = local.env2
-  #environment = local.environment_vars.locals.environment
-  region = local.region
-  #region = "us-weast-1"
-  #aws_region = get_input("aws_region")
-  #aws_region = "us-east-2"
-  #region = "${local.aws_region}"
+  region       = local.region
+  azs          = local.azs
+  # environment  = "prod"
+  environment  = local.env
+  aws_key_name = "sai-key"
+
+  ### +++ Put your VPC ID
+  vpc_id                = "vpc-07cab67d"
+  ### +++  Enter your public subnet with coma seprated.
+  vpc_zone_identifier  = "subnet-4c694a2b,subnet-abe80da5"
+
+  # // Kafka Variables //
+  kafka_lc             = "${local.env}-${local.kafka_service_name}-lc"
+  kafka_image          = "ami-08bc77a2c7eb2b1da" 
+  kafka_instance_type  = "t2.micro"
+  kafka_instance_count = 1
+  kafka_cluster_size   = 0
+  kafka_service_name   = local.kafka_service_name
+  
+  // Zookeeper Variables //
+  zookeeper_lc             = "${local.env}-${local.zookeeper_service_name}-lc"
+  zookeeper_image          = "ami-08bc77a2c7eb2b1da" 
+  zookeeper_instance_type  = "t2.micro"
+  zookeeper_instance_count = 1
+  zookeeper_cluster_size   = 0
+  zookeeper_service_name   = local.zookeeper_service_name
+
+  // Route 53 //
+  zone_name = "sai-test4.com"
+  rec_name  = "kafka.sai.test4.com"
   
 }
 
-#inputs = merge(
-#  local.account_vars.locals,
-#  local.region_vars.locals,
-#  local.environment_vars.locals,
-#)
