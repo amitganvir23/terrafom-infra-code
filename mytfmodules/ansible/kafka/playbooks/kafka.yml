@@ -1,0 +1,57 @@
+---
+- name: Configuring EC2 instances for kafka
+  hosts: localhost
+  connection: local
+#  remote_user: ubuntu
+#  become: true
+#  become_method: sudo
+  gather_facts: no
+  vars:
+      - REGION: us-east-1
+      - ec2_tag_key: Role
+      - ec2_tag_value: kafka
+      - ec2_tag_zookeerp_value: zookeeper
+# --------------------------------------
+##  JAVA
+# --------------------------------------
+      - java_home: /usr/local/java/jdk
+      #- jdk_archive_url: http://download.oracle.com/otn-pub/java/jdk/8u171-b11/512cd62ec5174c3487ac17c61aaa89e8/jdk-8u171-linux-x64.tar.gz
+      #- jdk_archive_filename: jdk-8u171-linux-x64.tar.gz
+      - jdk_archive_url: http://download.oracle.com/otn-pub/java/jdk/8u181-b13/96a7b8442fe848ef90c96a2fad6ed6d1/jdk-8u181-linux-x64.tar.gz
+      - jdk_archive_filename: jdk-8u181-linux-x64.tar.gz
+      - jdk_version: jdk1.8.0_181
+      #- jdk_version: jdk1.8.0_171
+
+# --------------------------------------
+## Common -  Common Location information.
+# --------------------------------------
+      - install_base_path: /usr/local
+      - soft_link_base_path: /opt
+
+# --------------------------------------
+## kafka
+# --------------------------------------
+      - version: 2.4.0
+      - kafka_base_versioin: 2.12
+      - kafka_port: 9092
+      - zookeeper_port: 2181
+      - data_store: /mnt/data/kafka
+      - log4j_rootlogger: INFO
+      - topics: [ A, B, C, D ]
+      - user: kafkaadmin
+      - group: kafkaadmin
+      - password: $6$SDOmVPRk$Jcb/qm2QTKsLABvBHx/CYtsgmShobAr7BwhWWbrrQIHfjndIzcbJhv1b2Dh2Rv.KgWhjTipT3MJUBQFf1g5O70
+      - replication_factor: 1
+      - partition_count: 8
+      - url: http://www-us.apache.org/dist/kafka/{{ version }}/kafka_{{ kafka_base_versioin }}-{{ version }}.tgz
+      - server_properties_url: https://raw.githubusercontent.com/amitganvir23/amazon-cloud-formation-kakfa/master/kafka-templates/server.properties
+  roles:
+        - kafka-broker
+
+# ---
+# - hosts: "{{zookeeper}}"
+#   gather_facts: false
+#   remote_user: ubuntu
+#   sudo: True
+#   roles:
+#         - zookeeper

@@ -1,0 +1,79 @@
+#--------------------------------------
+## Creating User for kafka
+#--------------------------------------
+- name: sleep for 240 seconds and continue with play
+  wait_for: timeout=1
+
+- name: Create a User `"{{ user }}"` for all our Hadoop Modules.
+  user: name={{ user }} password={{ password }}
+
+#--------------------------------------
+### ---- Collecting Private IPs of Kafka
+#--------------------------------------
+- name: Collecting Private IP address of Kafka nodes
+  shell: "aws --region {{ REGION }} ec2 describe-instances --filters \"Name=tag:{{ ec2_tag_key }},Values={{ ec2_tag_value }}\" \"Name=network-interface.addresses.private-ip-address,Values=*\" --query 'Reservations[*].Instances[*].{InstanceId:InstanceId,PrivateDnsName:PrivateDnsName,State:State.Name, IP:NetworkInterfaces[0].PrivateIpAddress}'|grep -w IP|cut -d ':' -f 2|tr -d ','|tr -d '\"'|sed 's/ //g'"
+  register: private_ips
+- debug:
+    msg: "{{ private_ips.stdout_lines }}"
+
+#--------------------------------------
+#Installing Java/Jdk
+#--------------------------------------
+
+# - name: JDK | Oracle JDK | Add the JDK binaries to the system path (/etc/profile)
+#   lineinfile: dest=/etc/profile regexp='^JAVA_HOME={{java_home}}' line="JAVA_HOME={{java_home}}" state=present
+
+# - name: JDK | Oracle JDK | Add the JDK binaries to the system path (/etc/profile)
+#   lineinfile: dest=/etc/profile regexp='^PATH=.*JAVA_HOME.*' line="PATH=$PATH:$HOME/bin:$JAVA_HOME/bin" state=present
+
+
+#--------------------------------------
+# Downloading and installing Kafka
+#--------------------------------------
+- name: Download Kafka
+  get_url: url={{ url }} dest=/mnt/kafka_{{ kafka_base_versioin }}-{{ version }}.tgz mode=0644 validate_certs=no
+
+- name: Copy and UnArchive the Package in Destination Server.
+  unarchive: creates={{ install_base_path }}/kafka_{{ kafka_base_versioin }}-{{ version }} copy=no src=/mnt/kafka_{{ kafka_base_versioin }}-{{ version }}.tgz dest={{ install_base_path }} owner={{ user }} group={{ group }}
+
+- name: Change Directory Permissions.
+  file: path={{ install_base_path }}/kafka_{{ kafka_base_versioin }}-{{ version }} owner={{ user }} group={{ group }} recurse=yes
+
+- name: Creating a Symbolic Link in {{ install_base_path }}/kafka.
+  file: src={{ install_base_path }}/kafka_{{ kafka_base_versioin }}-{{ version }} path={{ soft_link_base_path }}/kafka state=link owner={{ user }} group={{ group }}
+
+#--------------------------------------
+##------ Configuring Kafka
+#--------------------------------------
+- name: Creating data directory
+  file: path=/mnt/data state=directory owner={{ user }} group={{ group }}
+
+- name: Configuring log4j.properties file
+  lineinfile:
+    path: "{{ soft_link_base_path }}/kafka/config/log4j.properties"
+    line: "{{ item.line }}"
+    regexp: '^{{ item.regexp }}'
+  with_items:
+    - { regexp: 'log4j.rootLogger=', line: 'log4j.rootLogger={{ log4j_rootlogger }}, stdout' }
+
+- lineinfile:
+    path: "{{ soft_link_base_path }}/kafka/config/log4j.properties"
+    insertbefore: 'log4j.rootLogger='
+    #regexp: '^log4j.rootLogger='
+    line: 'kafka.logs.dir=logs'
+
+##---- Configuring changes for server.properties
+# - name: Removing old server.properties file
+#   file: path="{{ soft_link_base_path }}/kafka/config/server.properties" state=absent
+
+# - name: Download server.properties from repo
+#   get_url: url={{ server_properties_url }} dest={{ soft_link_base_path }}/kafka/config/server.properties mode=0644 validate_certs=no
+# - template:
+#     src: server.properties.j2
+#     dest: "{{ soft_link_base_path }}/kafka/config/server.properties2"
+
+- name: Collecting Private IP address of Zookeeper nodes
+  shell: "aws --region {{ REGION }} ec2 describe-instances --filters \"Name=tag:{{ ec2_tag_key }},Values={{ ec2_tag_zookeerp_value }}\" \"Name=network-interface.addresses.private-ip-address,Values=*\" --query 'Reservations[*].Instances[*].{InstanceId:InstanceId,PrivateDnsName:PrivateDnsName,State:State.Name, IP:NetworkInterfaces[0].PrivateIpAddress}'|grep -w IP|cut -d ':' -f 2|tr -d ','|tr -d '\"'|sed 's/ //g'"
+  register: private_ips_zookeeper
+
+

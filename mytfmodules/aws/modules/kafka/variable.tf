@@ -38,6 +38,13 @@ variable "root_volume_size" {
   default = "8"
 }
 
+variable "ebs_volume_type" {
+  default = "gp2"
+}
+variable "ebs_volume_size" {
+  default = "8"
+}
+
 # // Kafka Sevices name //
 variable "broker_service_name" {}
 variable "zookeeper_service_name" {}

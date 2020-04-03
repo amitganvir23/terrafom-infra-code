@@ -16,8 +16,8 @@ resource "aws_instance" "kafka_broker" {
   ami                         = var.kafka_image
   instance_type               = var.kafka_instance_type
   key_name                    = var.aws_key_name
-  # vpc_security_group_ids      = ["${aws_security_group.kafka_sg.id}"]
-  vpc_security_group_ids      = ["sg-003cdfcb5197ad1aa"]
+  vpc_security_group_ids      = ["${aws_security_group.kafka_sg.id}"]
+  # vpc_security_group_ids      = ["sg-003cdfcb5197ad1aa"]
   associate_public_ip_address = var.associate_public_ip_address
   # ebs_optimized           = "${var.ebs_optimized}"
   # disable_api_termination = "${var.disable_api_termination}"
@@ -37,9 +37,8 @@ resource "aws_instance" "kafka_broker" {
                    }
   ebs_block_device{
       device_name = "/dev/sdb"
-      volume_size = 8
-      # volume_type = "st1"
-      volume_type = "gp2"
+      volume_size = var.ebs_volume_size
+      volume_type = var.ebs_volume_type
     }
 }
 
@@ -48,8 +47,8 @@ resource "aws_network_interface" "kafka_broker" {
   count = var.kafka_instance_count
   # count = 2
   subnet_id       = var.subnet_id
-  # security_groups = ["${aws_security_group.kafka_sg.id}"]
-  security_groups = ["sg-003cdfcb5197ad1aa"]
+  security_groups = ["${aws_security_group.kafka_sg.id}"]
+  # security_groups = ["sg-003cdfcb5197ad1aa"]
   attachment {
         instance = aws_instance.kafka_broker[count.index].id
         device_index = 1
@@ -64,8 +63,8 @@ resource "aws_instance" "zookeeper" {
   ami                         = var.kafka_image
   instance_type               = var.kafka_instance_type
   key_name                    = var.aws_key_name
-  # vpc_security_group_ids      = ["${aws_security_group.kafka_sg.id}"]
-  vpc_security_group_ids      = ["sg-003cdfcb5197ad1aa"]
+  vpc_security_group_ids      = ["${aws_security_group.kafka_sg.id}"]
+  # vpc_security_group_ids      = ["sg-003cdfcb5197ad1aa"]
   associate_public_ip_address = var.associate_public_ip_address
   # ebs_optimized           = "${var.ebs_optimized}"
   # disable_api_termination = "${var.disable_api_termination}"
@@ -96,8 +95,8 @@ resource "aws_network_interface" "zookeeper" {
   count = var.zookeeper_instance_count
   # count = 2
   subnet_id       = var.subnet_id
-  # security_groups = ["${aws_security_group.kafka_sg.id}"]
-  security_groups = ["sg-003cdfcb5197ad1aa"]
+  security_groups = ["${aws_security_group.kafka_sg.id}"]
+  # security_groups = ["sg-003cdfcb5197ad1aa"]
   attachment {
         instance = aws_instance.zookeeper[count.index].id
         device_index = 1
@@ -111,8 +110,6 @@ resource "aws_network_interface" "zookeeper" {
 
 #   }
 # }
-
-
 
 
 # resource "aws_network_interface" "kafka-broker" {
