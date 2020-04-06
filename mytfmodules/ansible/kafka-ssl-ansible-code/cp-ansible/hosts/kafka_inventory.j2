@@ -1,0 +1,34 @@
+[kafka_broker]
+{% for host in kafka_broker_group %}
+{{ hostvars[host].inventory_hostname}}
+{% endfor %}
+
+[zookeeper]
+{% for host in zookeeper_group %}
+{{ hostvars[host].inventory_hostname}}
+{% endfor %}
+
+[schema_registry]
+{% for host in schema_registry_group %}
+{{ hostvars[host].inventory_hostname}}
+{% endfor %}
+
+[kafka_connect]
+{% for host in kafka_connect_group %}
+{{ hostvars[host].inventory_hostname}}
+{% endfor %}
+
+[ksql]
+{% for host in ksql_group %}
+{{ hostvars[host].inventory_hostname}}
+{% endfor %}
+
+[kafka_rest]
+{% for host in kafka_rest_group %}
+{{ hostvars[host].inventory_hostname}}
+{% endfor %}
+
+[control_center]
+{% for host in control_center_group %}
+{{ hostvars[host].inventory_hostname}}
+{% endfor %}

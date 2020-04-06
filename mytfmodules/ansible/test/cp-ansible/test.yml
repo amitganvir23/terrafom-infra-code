@@ -1,0 +1,12 @@
+---
+- name: Kafka Broker Provisioning
+  hosts: tag_Role_kafka_broker
+  remote_user: ec2-user
+  become: true
+  become_method: sudo
+  gather_facts: no
+  tags:
+    - kafka_broker
+  tasks:
+  - import_role:
+      name: confluent.kafka_broker

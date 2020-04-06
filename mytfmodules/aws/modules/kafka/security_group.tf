@@ -10,9 +10,18 @@ resource "aws_security_group" "kafka_sg" {
         from_port = 22
         to_port = 22
         protocol = "tcp"
+        cidr_blocks =  ["0.0.0.0/0"]
+        description = "SSH Temprory allow Remove this after SG created"
+    }
+
+    ingress {
+        from_port = 22
+        to_port = 22
+        protocol = "tcp"
         cidr_blocks =  ["${data.aws_vpc.vpc_data.cidr_block}"]
         description = "SSH"
     }
+
     ingress {
         from_port = 8083
         to_port = 8083

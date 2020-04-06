@@ -1,0 +1,7 @@
+---
+- name: test machine
+  shell: "hostname"
+  register: host
+
+- debug:
+    msg: "{{ host.stdout }}"

@@ -1,0 +1,2 @@
+ansible -i hosts.yml all -m ping
+ansible-playbook -i hosts.yml all.yml

@@ -1,0 +1,3 @@
+ec2-instance ansible_host=34.222.34.197 ansible_user=ec2-user ansible_ssh_private_key_file=/Users/chiranjeevi/Desktop/work/study_notes/ansible_kafka_slower/cp-ansible/event-tracker.pem
+ec2-instance ansible_host=54.190.149.14 ansible_user=ec2-user ansible_ssh_private_key_file=/Users/chiranjeevi/Desktop/work/study_notes/ansible_kafka_slower/cp-ansible/event-tracker.pem
+ec2-instance ansible_host=18.236.207.147 ansible_user=ec2-user ansible_ssh_private_key_file=/Users/chiranjeevi/Desktop/work/study_notes/ansible_kafka_slower/cp-ansible/event-tracker.pem
