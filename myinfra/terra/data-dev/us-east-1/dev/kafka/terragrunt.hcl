@@ -1,3 +1,6 @@
+
+
+
 ######## LOCALS Section ########
 locals {
   //## Including region.hcl file from the previous directory to make variables.
@@ -26,7 +29,7 @@ locals {
 ######## REPOSITORY Section ########
 terraform {
   //Specify your repository, branch/tag name and tfmodules path.
-  source = "git::git@gitlab.com:slower-west/ucsd/tfmodules.git//aws/modules/kafka?ref=sai"
+  source = "git::git@gitlab.com:slower-west/ucsd/tfmodules.git//aws/modules/kafka?ref=develop"
 }
 
 
@@ -61,7 +64,8 @@ inputs = {
   
   ## Kafka Variables //
   kafka_image          = "ami-0ce21b51cb31a48b8"  # Amazon Linux 2 AMI OR RHEL
-  kafka_instance_type  = "t2.medium"
+  # kafka_instance_type  = "t2.medium"
+  kafka_instance_type  = "m5.large"
   
 // ==== Broker/Kafka =====
   ## [ Number of instances to launch ]
