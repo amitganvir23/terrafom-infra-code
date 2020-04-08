@@ -126,6 +126,15 @@
     state: directory
     mode: 0640
 
+- name: Create other Logs Directory
+  file:
+    path: "{{kafka_broker.properties_log_dirs}}"
+    owner: "{{kafka_broker.user}}"
+    group: "{{kafka_broker.group}}"
+    mode: 0755
+    state: directory
+    recurse: yes
+
 - name: Write Service Overrides
   template:
     src: override.conf.j2
@@ -158,3 +167,13 @@
     name: "{{kafka_broker_service_name}}"
     enabled: yes
     state: started
+
+- name: Check whether Kafka ports are available
+  wait_for:
+    port: "{{ item }}"
+    #state: stopped
+    timeout: 60
+    msg: "{{ item }} Kafka port is not running, please check logs"
+  with_items:
+      - "{{ kafka_broker_custom_listeners.internal.port }}"
+      - "{{ kafka_broker_custom_listeners.external.port }}"
