@@ -96,7 +96,7 @@
 
 - name: Creating a user
   shell: "/usr/share/elasticsearch/bin/elasticsearch-users useradd {{ elasticsearch.admin_user }} -p {{ elasticsearch.admin_password }} -r superuser"
-  when: '"ERROR" in user_result'
+  when: '"ERROR" in user_result.stdout'
 
 - name: Validating elasticsearch vai URL
   uri:
