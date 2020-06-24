@@ -103,7 +103,7 @@
     url: "http://127.0.0.1:9200"
     method: GET
     status_code: '200'
-    user: {{ elasticsearch.admin_user }}
+    user: '{{ elasticsearch.admin_user }}'
     password: '{{ elasticsearch.admin_password }}'
   register: result
   until: result.status == 200
