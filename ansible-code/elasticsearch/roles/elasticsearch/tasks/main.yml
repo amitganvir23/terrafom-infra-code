@@ -1,19 +1,16 @@
 ---
 # tasks file for roles/elasticsearch
-- debug:
-    msg: "Hello"
-
-- name: installing Java 8
+- name: installing Java
   yum:
     name: "{{ item }}"
     state: present
   with_items:
-    - java-1.8.0-openjdk
-    - java-1.8.0-openjdk-devel
+    - java-{{ java_version }}-openjdk
+    - java-{{  java_version }}-openjdk-devel
 
 - name: Creating java paramter
   copy:
-    dest: /etc/profile.d/java8.sh
+    dest: /etc/profile.d/java.sh
     content: |
       export JAVA_HOME=/usr/lib/jvm/jre-openjdk
       export PATH=$PATH:$JAVA_HOME/bin
@@ -28,9 +25,9 @@
   copy:
     dest: /etc/yum.repos.d/elasticsearch.repo
     content: |
-      [elasticsearch-6.x]
-      name=Elasticsearch repository for 6.x packages
-      baseurl=https://artifacts.elastic.co/packages/6.x/yum
+      [elasticsearch-{{ elasticsearch.repo_version }}]
+      name=Elasticsearch repository for {{ elasticsearch.repo_version }} packages
+      baseurl=https://artifacts.elastic.co/packages/{{ elasticsearch.repo_version }}/yum
       gpgcheck=1
       gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
       enabled=1
@@ -48,16 +45,16 @@
     line: "{{ item.line }}"
     regexp: '^{{ item.regexp }}'
   with_items:
-    - { regexp: '-Xms1g', line: '-Xms512m' }
-    - { regexp: '-Xmx1g', line: '-Xmx512m' }
+    - { regexp: '-Xms1g', line: '{{ elasticsearch.java_max_mem }}' }
+    - { regexp: '-Xmx1g', line: '{{ elasticsearch.java_min_mem }}' }
 
 - name: add lines
   lineinfile:
     dest: /etc/elasticsearch/elasticsearch.yml
     line: '{{ item }}'
   with_items:
-    - 'node.name: "My First Node"'
-    - 'cluster.name: mycluster1'
+    - 'node.name: "{{ elasticsearch.node_name}}"'
+    - 'cluster.name: {{ elasticsearch.cluster_name}}'
     - 'network.host: 0.0.0.0'
     - 'discovery.type: single-node'
     - 'xpack.security.enabled: true'
@@ -83,30 +80,31 @@
 #   until: result.status == 200
 #   retries: 3
 #   delay: 2
-
-- stat: path=/etc/elasticsearch/default_passwords
+- name: Checking default password file is present
+  stat: 
+    path: /etc/elasticsearch/default_passwords
   register: file_result
 
-- name: Creating default password for elasticsearch
+- name: Creating a default password for elasticsearch
   shell: "echo y|/usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto > /etc/elasticsearch/default_passwords"
   when: file_result.stat.isdir is not defined
 
 - name: Verifying a user
-  shell: "/usr/share/elasticsearch/bin/elasticsearch-users list amit"
+  shell: "/usr/share/elasticsearch/bin/elasticsearch-users list {{ elasticsearch.admin_user }}"
   ignore_errors: yes
   register: user_result
 
 - name: Creating a user
-  shell: "/usr/share/elasticsearch/bin/elasticsearch-users useradd amit -p 123456 -r superuser"
+  shell: "/usr/share/elasticsearch/bin/elasticsearch-users useradd {{ elasticsearch.admin_user }} -p {{ elasticsearch.admin_password }} -r superuser"
   when: '"ERROR" in user_result'
 
 - name: Validating elasticsearch vai URL
   uri:
     url: "http://127.0.0.1:9200"
     method: GET
-    status_code: 200
-    user: amit
-    password: 123456
+    status_code: '200'
+    user: {{ elasticsearch.admin_user }}
+    password: '{{ elasticsearch.admin_password }}'
   register: result
   until: result.status == 200
   retries: 3
