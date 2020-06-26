@@ -1,5 +1,10 @@
 ---
 # tasks file for roles/elasticsearch
+- name: Removing java 7 version
+  yum:
+    name: java-1.7.0-openjdk
+    state: absent
+
 - name: installing Java
   yum:
     name: "{{ item }}"
@@ -39,6 +44,29 @@
     name: elasticsearch
     state: present
 
+##=====================================  elasticsearch encrypted communication =====================================
+- name: Creating a elasticsearch encrypted communication
+  block:
+    - name: Checking CA file
+      stat: 
+        path: "{{ es.encrypted_communication.CA_path }}" 
+      register: file_result_ca
+      
+    - name: Creating a CA file
+      shell: "/usr/share/elasticsearch/bin/elasticsearch-certutil ca --out {{ es.encrypted_communication.CA_path }} --pass {{ es.encrypted_communication.CA_password }} -s"
+      when: file_result_ca.stat.isdir is not defined
+
+    - name: Checking keypair file 
+      stat: 
+        path: "{{ es.encrypted_communication.keystore }}"
+      register: file_result_key
+
+    - name: Creating a key
+      shell: "/usr/share/elasticsearch/bin/elasticsearch-certutil cert --ca {{ es.encrypted_communication.CA_path }} --out {{ es.encrypted_communication.keystore }} --ca-pass {{ es.encrypted_communication.CA_password }} --pass {{ es.encrypted_communication.keystore_password }} -s"
+      when: file_result_key.stat.isdir is not defined
+  when: es.encrypted_communication.xpack_security_transport_ssl_enabled|upper == "TRUE"
+
+#================================ configuration ===========================
 - name: Updating java memory
   lineinfile:
     path: "/etc/elasticsearch/jvm.options"
@@ -56,13 +84,20 @@
       cluster.name: {{ es.cluster_name}}
       network.host: {{ es.network_host}}
       discovery.type: {{ es.discovery_type}}
-      xpack.security.enabled: {{ es.credentials.xpack_security_enabled}}
-      {% if es.credentials.xpack_security_enabled|upper == "TRUE" %}
+      xpack.security.enabled: {{ es.credentials.xpack_security_enabled }}
+      {% if es.encrypted_communication.xpack_security_transport_ssl_enabled|upper == "TRUE" %}
       xpack.security.transport.ssl.enabled: {{ es.encrypted_communication.xpack_security_transport_ssl_enabled}}
       xpack.security.transport.ssl.verification_mode: certificate
-      xpack.security.transport.ssl.keystore.path: {{ es.encrypted_communication.keystore}}
-      xpack.security.transport.ssl.truststore.path: {{ es.encrypted_communication.CA_path}}
+      xpack.security.transport.ssl.keystore.path: {{ es.encrypted_communication.keystore }}
+      xpack.security.transport.ssl.truststore.path: {{ es.encrypted_communication.CA_path }}
       {% endif %}
+
+- name: Updating ES configuration
+  file:
+    path: /etc/elasticsearch
+    recurse: yes
+    owner: elasticsearch
+    group: elasticsearch
 
 - name: Start and Enabled elasticsearch Service
   service:
@@ -86,15 +121,6 @@
 #   retries: 3
 #   delay: 2
 
-##=====================================  elasticsearch encrypted communication =====================================
-- name: Creating a elasticsearch encrypted communication
-  block:
-    - name: Creating a CA file
-      shell: "/usr/share/elasticsearch/bin/elasticsearch-certutil ca --out {{ es.encrypted_communication.CA_path }} --pass {{ es.encrypted_communication.CA_password }} -s"
-
-    - name: Creating a key
-      shell: "/usr/share/elasticsearch/bin/elasticsearch-certutil cert --ca {{ es.encrypted_communication.CA_path }} --out {{ es.encrypted_communication.keystore }} --ca-pass {{ es.encrypted_communication.CA_password }} --pass {{ es.encrypted_communication.keystore_password }} -s"
-  when: es.encrypted_communication.xpack_security_transport_ssl_enabled|upper == "TRUE"
 
 ##===================================== xpack credentials =====================================
 

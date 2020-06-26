@@ -15,11 +15,11 @@ es:
   network_host: "0.0.0.0"
   discovery_type: single-node
   credentials:
-    xpack_security_enabled: true
+    xpack_security_enabled: 'true'
     admin_user: 'admin'
     admin_password:  '123456'
   encrypted_communication:
-    xpack_security_transport_ssl_enabled: true
+    xpack_security_transport_ssl_enabled: 'true'
     CA_path: '/etc/elasticsearch/myCA.p12'
     ##  For Empty password puted single quote
     CA_password: "''"

@@ -31,7 +31,7 @@ delete_on_termination = true
 
 ## Kafka Variables //
 aws_image          = "ami-01d025118d8e760db"  # Amazon Linux 2 AMI OR RHEL
-aws_instance_type  = "t2.micro"
+aws_instance_type  = "t2.medium"
   
 // ==== Broker/Kafka =====
 ## [ Number of instances to launch ]
