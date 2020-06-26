@@ -5,12 +5,25 @@ ansible_ssh_private_key_file: ~/.ssh/desktop.pem
 
 java_version: 1.8.0
 
-elasticsearch:
-    repo_version: '6.x'
-    java_max_mem: '-Xms512m'
-    java_min_mem: '-Xmx512m'
-    node_name: 'My First Node'
-    cluster_name: 'mycluster1'
+# es - elasticsearch
+es:
+  repo_version: '6.x'
+  java_max_mem: '-Xms512m'
+  java_min_mem: '-Xmx512m'
+  node_name: 'My First Node'
+  cluster_name: mycluster1
+  network_host: "0.0.0.0"
+  discovery_type: single-node
+  credentials:
+    xpack_security_enabled: true
     admin_user: 'admin'
     admin_password:  '123456'
+  encrypted_communication:
+    xpack_security_transport_ssl_enabled: true
+    CA_path: '/etc/elasticsearch/myCA.p12'
+    ##  For Empty password puted single quote
+    CA_password: "''"
+    keystore: '/etc/elasticsearch/my-Kyestore.p12'
+    ##  For Empty password puted single quote
+    keystore_password: "''"
 

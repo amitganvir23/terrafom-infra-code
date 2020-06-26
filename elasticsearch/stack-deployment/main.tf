@@ -47,7 +47,7 @@ module "vpc" {
 ########## ec2 and SG
 module "elasticsearch" {
   source 	                        = "../modules/elasticsearch"
-  #subnet_id                       = "${module.vpc.aws_subnet.public-subnet[0]}"
+  #subnet_id                      = "${module.vpc.aws_subnet.public-subnet[0]}"
   subnet_id                       = "${module.vpc.aws_pub_subnet_id[0]}"
   vpc_id 	                        = "${module.vpc.vpc_id}"
   environment                     = "${var.environment}"
@@ -62,6 +62,12 @@ module "elasticsearch" {
   aws_key_name                    = "${var.aws_key_name}"
 }
 #*******************************************************/
+
+module "ansible-es" {
+   source                 = "../modules/ansible-es"
+   elasticsearch_ec2_tag  = "tag_Role_${var.elasticsearch_service_name}"
+
+}
 
 # ### Configure the backend
 # terraform {

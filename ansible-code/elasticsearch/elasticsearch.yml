@@ -1,5 +1,5 @@
 - name: Elasticsearch Provisioning
-  hosts: tag_Role_elasticsearch
+  hosts: {{ elasticsearch_ec2_tag }}
   remote_user: ec2-user
   become: true
   become_method: sudo

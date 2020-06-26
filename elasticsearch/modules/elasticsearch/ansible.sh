@@ -1,13 +1,18 @@
 #!/bin/sh
 
-elasticsearch_plybook="../../../ansible-code/elasticsearch/"
+## "elasticsearch_ec2_tag" variable value is coming from terraform
+elasticsearch_ec2_tag=$elasticsearch_ec2_tag
+elasticsearch_plybook="../../ansible-code/elasticsearch/"
+
 sleep 2m
 cd $elasticsearch_plybook
-sudo find  . -type f|xargs dos2unix
-sudo chmod 655 hosts/*
-sudo hosts/ec2.py --list --refresh
-#sudo ansible-playbook elasticsearch-inv-create.yml -i hosts/ec2.py
-sleep 1m
-#ansible-playbook all.yml -i hosts/elasticsearch_inventory > /tmp/elasticsearch-ansible.log
-#ansible-playbook elasticsearch_hosts.yml elasticsearch-deploy.yml -i hosts/ec2.py --private-key /tmp/sai-ec2.pem >> /tmp/elasticsearch-ansible.log
-ansible-playbook -i hosts/ec2.py elasticsearch.yml
+if [ $? -eq 0 ]
+then
+  sudo find  . -type f | xargs dos2unix
+  sudo chmod 655 hosts/*
+  sudo hosts/ec2.py --list --refresh
+  sleep 1m
+  ansible-playbook -i hosts/ec2.py elasticsearch.yml -e "elasticsearch_ec2_tag=$elasticsearch_ec2_tag"
+else
+  echo "Error, Dir dose not exisit $elasticsearch_plybook"
+fi
