@@ -8,8 +8,8 @@ java_version: 1.8.0
 # es - elasticsearch
 es:
   repo_version: '6.x'
-  java_max_mem: '-Xms512m'
-  java_min_mem: '-Xmx512m'
+  java_max_mem: '-Xms1g'
+  java_min_mem: '-Xmx1g'
   node_name: 'My First Node'
   cluster_name: mycluster1
   network_host: "0.0.0.0"
