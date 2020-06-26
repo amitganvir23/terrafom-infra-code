@@ -128,11 +128,11 @@
   block:
     - name: Checking default password file is present
       stat: 
-        path: /etc/elasticsearch/default_passwords
+        path: "{{ es.credentials.auto_passwords_store }}"
       register: file_result
       
     - name: Creating a default password for elasticsearch
-      shell: "echo y | /usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto > /etc/elasticsearch/default_passwords"
+      shell: "echo y | /usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto > {{ es.credentials.auto_passwords_store }}"
       when: file_result.stat.isdir is not defined
 
     - name: Verifying a user

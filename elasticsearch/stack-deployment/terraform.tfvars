@@ -25,7 +25,7 @@ aws_key_name = "desktop-key"
 
 
 ## [ Root Volume type ]
-root_volume_type = "gp2"
+root_volume_type      = "gp2"
 delete_on_termination = true
 
 

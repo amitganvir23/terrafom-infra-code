@@ -16,6 +16,7 @@ es:
   discovery_type: single-node
   credentials:
     xpack_security_enabled: 'true'
+    auto_passwords_store: /etc/elasticsearch/default_auto_passwords
     admin_user: 'admin'
     admin_password:  '123456'
   encrypted_communication:

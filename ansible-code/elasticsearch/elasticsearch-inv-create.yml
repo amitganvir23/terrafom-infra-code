@@ -1,0 +1,14 @@
+---
+- name: elasticsearch Provisioning
+  hosts: localhost
+  #remote_user: ec2-user
+  #become: true
+  #become_method: sudo
+  gather_facts: no
+  vars:
+      elasticsearch_group: "{{ groups['tag_Role_elasticsearch'] }}"
+  tasks:
+  - name: making elasticsearch dynamic inventory
+    template:
+      src: "{{ playbook_dir }}//hosts/elasticsearch_inventory.j2"
+      dest: "{{ playbook_dir }}/hosts/elasticsearch_inventory"
