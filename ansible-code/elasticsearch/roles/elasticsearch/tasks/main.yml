@@ -162,11 +162,6 @@
       blockinfile:
         path: /etc/elasticsearch/elasticsearch.yml
         block: |
-          node.name: {{ es.node_name}}
-          cluster.name: {{ es.cluster_name}}
-          network.host: {{ es.network_host}}
-          discovery.type: {{ es.discovery_type}}
-          xpack.security.enabled: {{ es.credentials.xpack_security_enabled }}
           {% if es.encrypted_communication.xpack_security_transport_ssl_enabled|upper == "TRUE" %}
           xpack.security.transport.ssl.enabled: {{ es.encrypted_communication.xpack_security_transport_ssl_enabled }}
           xpack.security.transport.ssl.verification_mode: certificate
