@@ -44,28 +44,6 @@
     name: elasticsearch
     state: present
 
-##=====================================  elasticsearch encrypted communication =====================================
-- name: Creating a elasticsearch encrypted communication
-  block:
-    - name: Checking CA file
-      stat: 
-        path: "{{ es.encrypted_communication.CA_path }}" 
-      register: file_result_ca
-      
-    - name: Creating a CA file
-      shell: "/usr/share/elasticsearch/bin/elasticsearch-certutil ca --out {{ es.encrypted_communication.CA_path }} --pass {{ es.encrypted_communication.CA_password }} -s"
-      when: file_result_ca.stat.isdir is not defined
-
-    - name: Checking keypair file 
-      stat: 
-        path: "{{ es.encrypted_communication.keystore }}"
-      register: file_result_key
-
-    - name: Creating a key
-      shell: "/usr/share/elasticsearch/bin/elasticsearch-certutil cert --ca {{ es.encrypted_communication.CA_path }} --out {{ es.encrypted_communication.keystore }} --ca-pass {{ es.encrypted_communication.CA_password }} --pass {{ es.encrypted_communication.keystore_password }} -s"
-      when: file_result_key.stat.isdir is not defined
-  when: es.encrypted_communication.xpack_security_transport_ssl_enabled|upper == "TRUE"
-
 #================================ configuration ===========================
 - name: Updating java memory
   lineinfile:
@@ -85,12 +63,6 @@
       network.host: {{ es.network_host}}
       discovery.type: {{ es.discovery_type}}
       xpack.security.enabled: {{ es.credentials.xpack_security_enabled }}
-      {% if es.encrypted_communication.xpack_security_transport_ssl_enabled|upper == "TRUE" %}
-      xpack.security.transport.ssl.enabled: {{ es.encrypted_communication.xpack_security_transport_ssl_enabled}}
-      xpack.security.transport.ssl.verification_mode: certificate
-      xpack.security.transport.ssl.keystore.path: {{ es.encrypted_communication.keystore }}
-      xpack.security.transport.ssl.truststore.path: {{ es.encrypted_communication.CA_path }}
-      {% endif %}
 
 - name: Updating ES configuration
   file:
@@ -157,4 +129,68 @@
       delay: 2
   when: es.credentials.xpack_security_enabled|upper == "TRUE"
 
+
+##=====================================  elasticsearch encrypted communication =====================================
+- name: Creating a elasticsearch encrypted communication
+  block:
+    - name: Checking CA file
+      stat: 
+        path: "{{ es.encrypted_communication.CA_path }}" 
+      register: file_result_ca
+      
+    - name: Creating a CA file
+      shell: "/usr/share/elasticsearch/bin/elasticsearch-certutil ca --out {{ es.encrypted_communication.CA_path }} --pass {{ es.encrypted_communication.CA_password }} -s"
+      when: file_result_ca.stat.isdir is not defined
+
+    - name: Checking keypair file 
+      stat: 
+        path: "{{ es.encrypted_communication.keystore }}"
+      register: file_result_key
+
+    - name: Creating a key
+      shell: "/usr/share/elasticsearch/bin/elasticsearch-certutil cert --ca {{ es.encrypted_communication.CA_path }} --out {{ es.encrypted_communication.keystore }} --ca-pass {{ es.encrypted_communication.CA_password }} --pass {{ es.encrypted_communication.keystore_password }} -s"
+      when: file_result_key.stat.isdir is not defined
+    
+    - name: Updating transport and HTTP request SSL encryption communication
+      blockinfile:
+        path: /etc/elasticsearch/elasticsearch.yml
+        block: |
+          {% if es.encrypted_communication.xpack_security_transport_ssl_enabled|upper == "TRUE" %}
+          xpack.security.transport.ssl.enabled: {{ es.encrypted_communication.xpack_security_transport_ssl_enabled }}
+          xpack.security.transport.ssl.verification_mode: certificate
+          xpack.security.transport.ssl.keystore.path: {{ es.encrypted_communication.keystore }}
+          xpack.security.transport.ssl.truststore.path: {{ es.encrypted_communication.CA_path }}
+          {% endif %}
+          {% if es.encrypted_communication.xpack_security_http_ssl_enabled|upper == "TRUE" %}
+          xpack.security.http.ssl.enabled: {{ xpack_security_http_ssl_enabled }}
+          xpack.security.http.ssl.keystore.path: { es.encrypted_communication.keystore }}
+          xpack.security.http.ssl.truststore.path: {{ es.encrypted_communication.CA_path }}
+          xpack.security.http.ssl.client_authentication: optional
+          {% endif %}
+  
+    - name: Start and Enabled elasticsearch Service
+      service:
+        name: elasticsearch
+        state: restarted
+        # enabled: yes
+
+    - name: Validating port number
+      wait_for:
+        host: localhost
+        port: 9200
+        timeout: 60
+
+    - name: Validating elasticsearch vai URL
+      uri:
+        url: "https://127.0.0.1:9200"
+        method: GET
+        status_code: '200'
+        user: '{{ es.credentials.admin_user }}'
+        password: '{{ es.credentials.admin_password }}'
+      register: result
+      until: result.status == 200
+      retries: 3
+      delay: 2
+
+  when: (es.encrypted_communication.xpack_security_transport_ssl_enabled|upper == "TRUE" or es.encrypted_communication.xpack_security_http_ssl_enabled|upper == "TRUE") and es.credentials.xpack_security_enabled|upper == "TRUE"
 

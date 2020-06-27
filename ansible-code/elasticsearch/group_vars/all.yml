@@ -21,6 +21,7 @@ es:
     admin_password:  '123456'
   encrypted_communication:
     xpack_security_transport_ssl_enabled: 'true'
+    xpack_security_http_ssl_enabled: 'true'
     CA_path: '/etc/elasticsearch/myCA.p12'
     ##  For Empty password puted single quote
     CA_password: "''"
