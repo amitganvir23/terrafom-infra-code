@@ -54,6 +54,17 @@
     - { regexp: '-Xms1g', line: '{{ es.java_max_mem }}' }
     - { regexp: '-Xmx1g', line: '{{ es.java_min_mem }}' }
 
+- name: Updating ES configuration
+  lineinfile:
+    dest: /etc/elasticsearch/elasticsearch.yml
+    line: '{{ item }}'
+  with_items:
+    - 'node.name: {{ es.node_name}}'
+    - 'cluster.name: {{ es.cluster_name}}'
+    - 'network.host: {{ es.network_host}}'
+    - 'discovery.type: {{ es.discovery_type}}'
+    - 'xpack.security.enabled: {{ es.credentials.xpack_security_enabled }}'
+
 - name: Insert/Update "Match User" configuration block in /etc/ssh/sshd_config
   blockinfile:
     path: /etc/elasticsearch/elasticsearch.yml
@@ -188,8 +199,8 @@
         status_code: '200'
         user: '{{ es.credentials.admin_user }}'
         password: '{{ es.credentials.admin_password }}'
+        validate_certs: no
       register: result
-      validate_certs: no
       until: result.status == 200
       retries: 3
       delay: 2
