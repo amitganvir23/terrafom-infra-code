@@ -65,12 +65,6 @@
     - 'discovery.type: {{ es.discovery_type}}'
     - 'xpack.security.enabled: {{ es.credentials.xpack_security_enabled }}'
 
-- name: Insert/Update "Match User" configuration block in /etc/ssh/sshd_config
-  blockinfile:
-    path: /etc/elasticsearch/elasticsearch.yml
-    block: |
-      xpack.security.enabled: {{ es.credentials.xpack_security_enabled }}
-
 - name: Updating ES configuration
   file:
     path: /etc/elasticsearch
