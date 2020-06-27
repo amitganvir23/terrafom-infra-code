@@ -162,7 +162,7 @@
           xpack.security.transport.ssl.truststore.path: {{ es.encrypted_communication.CA_path }}
           {% endif %}
           {% if es.encrypted_communication.xpack_security_http_ssl_enabled|upper == "TRUE" %}
-          xpack.security.http.ssl.enabled: {{ xpack_security_http_ssl_enabled }}
+          xpack.security.http.ssl.enabled: {{ es.encrypted_communication.xpack_security_http_ssl_enabled }}
           xpack.security.http.ssl.keystore.path: { es.encrypted_communication.keystore }}
           xpack.security.http.ssl.truststore.path: {{ es.encrypted_communication.CA_path }}
           xpack.security.http.ssl.client_authentication: optional
