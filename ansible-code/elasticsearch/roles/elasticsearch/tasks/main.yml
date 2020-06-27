@@ -89,6 +89,7 @@
 #     url: "http://127.0.0.1:9200"
 #     method: GET
 #     status_code: 200
+      #validate_certs: no
 #   register: result
 #   until: result.status == 200
 #   retries: 3
@@ -124,6 +125,7 @@
         status_code: '200'
         user: '{{ es.credentials.admin_user }}'
         password: '{{ es.credentials.admin_password }}'
+        validate_certs: no
       register: result
       until: result.status == 200
       retries: 3
