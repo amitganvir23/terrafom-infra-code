@@ -65,12 +65,12 @@
     - 'discovery.type: {{ es.discovery_type}}'
     - 'xpack.security.enabled: {{ es.credentials.xpack_security_enabled }}'
 
-- name: Updating ES configuration
-  file:
-    path: /etc/elasticsearch
-    recurse: yes
-    owner: elasticsearch
-    group: elasticsearch
+# - name: Updating ES configuration
+#   file:
+#     path: /etc/elasticsearch
+#     recurse: yes
+#     owner: elasticsearch
+#     group: elasticsearch
 
 - name: Start and Enabled elasticsearch Service
   service:
@@ -152,6 +152,25 @@
       shell: "/usr/share/elasticsearch/bin/elasticsearch-certutil cert --ca {{ es.encrypted_communication.CA_path }} --out {{ es.encrypted_communication.keystore }} --ca-pass {{ es.encrypted_communication.CA_password }} --pass {{ es.encrypted_communication.keystore_password }} -s"
       when: file_result_key.stat.isdir is not defined
     
+    - name: Adding keystore password
+      shell: "echo {{ es.encrypted_communication.keystore_password }} | /usr/share/elasticsearch/bin/elasticsearch-keystore add {{ item }} --stdin"
+      ignore_errors: yes
+      with_items:
+        - xpack.security.transport.ssl.keystore.secure_password
+        - xpack.security.transport.ssl.truststore.secure_password
+        - xpack.security.http.ssl.keystore.secure_password
+        - xpack.security.http.ssl.truststore.secure_password
+      when: es.encrypted_communication.keystore_password != "''"
+
+    - name: Listing keystore password
+      shell: "/usr/share/elasticsearch/bin/elasticsearch-keystore list"
+      register: keystore_pwd_result
+      when: es.encrypted_communication.keystore_password != "''"
+
+    - debug:
+        msg: "{{ keystore_pwd_result.stdout }}"
+      when: es.encrypted_communication.keystore_password  != "''"
+
     - name: Updating transport and HTTP request SSL encryption communication
       blockinfile:
         path: /etc/elasticsearch/elasticsearch.yml
@@ -169,6 +188,13 @@
           xpack.security.http.ssl.client_authentication: optional
           {% endif %}
   
+    - name: Updating ES configuration
+      file:
+        path: /etc/elasticsearch
+        recurse: yes
+        owner: elasticsearch
+        group: elasticsearch
+      
     - name: Start and Enabled elasticsearch Service
       service:
         name: elasticsearch

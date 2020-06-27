@@ -24,8 +24,10 @@ es:
     xpack_security_http_ssl_enabled: 'true'
     CA_path: '/etc/elasticsearch/myCA.p12'
     ##  For Empty password puted single quote
-    CA_password: "''"
+    # CA_password: "''"
+    CA_password: "123456789"
     keystore: '/etc/elasticsearch/my-Kyestore.p12'
     ##  For Empty password puted single quote
-    keystore_password: "''"
+    # keystore_password: "''"
+    keystore_password: "123456789"
 
