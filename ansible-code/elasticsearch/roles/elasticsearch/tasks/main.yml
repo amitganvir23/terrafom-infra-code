@@ -189,6 +189,7 @@
         user: '{{ es.credentials.admin_user }}'
         password: '{{ es.credentials.admin_password }}'
       register: result
+      validate_certs: no
       until: result.status == 200
       retries: 3
       delay: 2
