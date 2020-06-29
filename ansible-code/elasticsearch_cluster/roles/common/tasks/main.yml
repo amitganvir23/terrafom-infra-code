@@ -1,0 +1,212 @@
+---
+# tasks file for roles/elasticsearch
+- name: Removing java 7 version
+  yum:
+    name: java-1.7.0-openjdk
+    state: absent
+
+- name: installing Java
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - java-{{ java_version }}-openjdk
+    - java-{{  java_version }}-openjdk-devel
+
+- name: Creating java paramter
+  copy:
+    dest: /etc/profile.d/java.sh
+    content: |
+      export JAVA_HOME=/usr/lib/jvm/jre-openjdk
+      export PATH=$PATH:$JAVA_HOME/bin
+      export CLASSPATH=.:$JAVA_HOME/jre/lib:$JAVA_HOME/lib:$JAVA_HOME/lib/tools.jar
+
+- name: Importing RPM GPG key
+  rpm_key:
+    state: present
+    key: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+
+- name: Creating elasticsearch repo
+  copy:
+    dest: /etc/yum.repos.d/elasticsearch.repo
+    content: |
+      [elasticsearch-{{ es.repo_version }}]
+      name=Elasticsearch repository for {{ es.repo_version }} packages
+      baseurl=https://artifacts.elastic.co/packages/{{ es.repo_version }}/yum
+      gpgcheck=1
+      gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+      enabled=1
+      autorefresh=1
+      type=rpm-md
+
+- name: installing elasticsearch
+  yum:
+    name: elasticsearch
+    state: present
+
+#================================ configuration ===========================
+- name: Updating java memory
+  lineinfile:
+    path: "/etc/elasticsearch/jvm.options"
+    line: "{{ item.line }}"
+    regexp: '^{{ item.regexp }}'
+  with_items:
+    - { regexp: '-Xms1g', line: '{{ es.java_max_mem }}' }
+    - { regexp: '-Xmx1g', line: '{{ es.java_min_mem }}' }
+
+# - name: Start and Enabled elasticsearch Service
+#   service:
+#     name: elasticsearch
+#     state: started
+#     enabled: yes
+
+# - name: Validating port number
+#   wait_for:
+#     host: localhost
+#     port: 9200
+#     timeout: 60
+
+
+##=====================================  elasticsearch encrypted communication =====================================
+- name: Creating a elasticsearch encrypted communication
+  block:
+
+    - name: Creating a elasticsearch encrypted communication
+      block:
+        # - debug:
+        #     msg: "crearting CA and Kyapri for: {{ inventory_hostname }}"
+        #   delegate_to: "{{ ansible_play_hosts[1] }}"
+        #   when: inventory_hostname == ansible_play_hosts[1]
+        #   delegate_to: "{{groups['elasticsearch_master'].1}}"
+        #   when: inventory_hostname == groups['elasticsearch_master'].1
+          
+        - name: Checking CA file
+          stat: 
+            path: "{{ es.encrypted_communication.CA_path }}" 
+          register: file_result_ca
+          delegate_to: "{{ ansible_play_hosts[1] }}"
+          
+        - name: Creating a CA file
+          shell: "/usr/share/elasticsearch/bin/elasticsearch-certutil ca --out {{ es.encrypted_communication.CA_path }} --pass {{ es.encrypted_communication.CA_password }} -s"
+          when: file_result_ca.stat.isdir is not defined
+          delegate_to: "{{ ansible_play_hosts[1] }}"
+
+        - name: Checking keypair file 
+          stat: 
+            path: "{{ es.encrypted_communication.keystore }}"
+          register: file_result_key
+          delegate_to: "{{ ansible_play_hosts[1] }}"
+
+        - name: Creating a key
+          shell: "/usr/share/elasticsearch/bin/elasticsearch-certutil cert --ca {{ es.encrypted_communication.CA_path }} --out {{ es.encrypted_communication.keystore }} --ca-pass {{ es.encrypted_communication.CA_password }} --pass {{ es.encrypted_communication.keystore_password }} -s"
+          when: file_result_key.stat.isdir is not defined
+          delegate_to: "{{ ansible_play_hosts[1] }}"
+       
+        - name: Storing in a path relative to the playbook
+          fetch:
+            src: "{{ item }}"
+            dest: "{{ role_path }}/files/{{ item }}"
+            flat: yes
+          with_items:
+            - "{{ es.encrypted_communication.CA_path }}"
+            - "{{ es.encrypted_communication.keystore }}"
+          delegate_to: "{{ ansible_play_hosts[1] }}"
+
+        - name: coping ca and key files
+          copy:
+            src: "{{ role_path }}/files/{{ item }}"
+            dest: "/tmp/es_{{ inventory_hostname }}/"
+            owner: elasticsearch
+            group: elasticsearch
+          with_items:
+            - "{{ es.encrypted_communication.CA_path }}"
+            - "{{ es.encrypted_communication.keystore }}"
+          when: inventory_hostname != ansible_play_hosts[1]
+
+      when: inventory_hostname == ansible_play_hosts[1]
+
+
+    - name: Adding keystore password
+      shell: "echo {{ es.encrypted_communication.keystore_password }} | /usr/share/elasticsearch/bin/elasticsearch-keystore add {{ item }} --stdin"
+      ignore_errors: yes
+      with_items:
+        - xpack.security.transport.ssl.keystore.secure_password
+        - xpack.security.transport.ssl.truststore.secure_password
+        - xpack.security.http.ssl.keystore.secure_password
+        - xpack.security.http.ssl.truststore.secure_password
+      when: es.encrypted_communication.keystore_password != "''"
+
+    - name: Listing keystore password
+      shell: "/usr/share/elasticsearch/bin/elasticsearch-keystore list"
+      register: keystore_pwd_result
+      when: es.encrypted_communication.keystore_password != "''"
+
+    - debug:
+        msg: "{{ keystore_pwd_result.stdout }}"
+      when: es.encrypted_communication.keystore_password  != "''"
+
+    - name: Create Control Center Config
+      template:
+        src: elasticsearch.yml.j2
+        dest: etc/elasticsearch/elasticsearch.yml
+        owner: elasticsearch
+        group: elasticsearch
+
+    - name: Verifying a user
+      shell: "/usr/share/elasticsearch/bin/elasticsearch-users list {{ es.credentials.admin_user }}"
+      ignore_errors: yes
+      register: user_result
+
+    - name: Creating a user
+      shell: "/usr/share/elasticsearch/bin/elasticsearch-users useradd {{ es.credentials.admin_user }} -p {{ es.credentials.admin_password }} -r superuser"
+      when: '"ERROR" in user_result.stdout'
+  
+    - name: Updating ES configuration
+      file:
+        path: /etc/elasticsearch
+        recurse: yes
+        owner: elasticsearch
+        group: elasticsearch
+      
+    - name: Start and Enabled elasticsearch Service
+      service:
+        name: elasticsearch
+        state: restarted
+        enabled: yes
+
+    - name: Validating port number
+      wait_for:
+        host: localhost
+        port: 9200
+        timeout: 60
+
+    - name: Validating elasticsearch vai URL
+      uri:
+        url: "https://127.0.0.1:9200"
+        method: GET
+        status_code: '200'
+        user: '{{ es.credentials.admin_user }}'
+        password: '{{ es.credentials.admin_password }}'
+        validate_certs: no
+      register: result
+      until: result.status == 200
+      retries: 3
+      delay: 2
+      when: es.encrypted_communication.xpack_security_http_ssl_enabled|upper == "TRUE"
+
+    - name: Validating elasticsearch vai URL
+      uri:
+        url: "http://127.0.0.1:9200"
+        method: GET
+        status_code: '200'
+        user: '{{ es.credentials.admin_user }}'
+        password: '{{ es.credentials.admin_password }}'
+        validate_certs: no
+      register: result
+      until: result.status == 200
+      retries: 3
+      delay: 2
+      when: es.encrypted_communication.xpack_security_http_ssl_enabled|upper != "TRUE"  
+
+  when: (es.encrypted_communication.xpack_security_transport_ssl_enabled|upper == "TRUE" or es.encrypted_communication.xpack_security_http_ssl_enabled|upper == "TRUE") and es.credentials.xpack_security_enabled|upper == "TRUE"
+

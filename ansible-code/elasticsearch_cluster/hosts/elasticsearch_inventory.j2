@@ -1,0 +1,4 @@
+[elasticsearch-master]
+{% for host in elasticsearch_group %}
+{{ hostvars[host].inventory_hostname}}
+{% endfor %}
