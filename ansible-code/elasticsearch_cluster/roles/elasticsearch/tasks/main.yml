@@ -144,7 +144,7 @@
         msg: "{{ keystore_pwd_result.stdout }}"
       when: es.encrypted_communication.keystore_password  != "''"
 
-    - name: Create Control Center Config
+    - name: Create elasticsearch YAML Config file
       template:
         src: elasticsearch.yml.j2
         dest: /etc/elasticsearch/elasticsearch.yml
@@ -179,32 +179,62 @@
         port: 9200
         timeout: 60
 
-    - name: Validating elasticsearch vai URL
-      uri:
-        url: "https://127.0.0.1:9200"
-        method: GET
-        status_code: '200'
-        user: '{{ es.credentials.admin_user }}'
-        password: '{{ es.credentials.admin_password }}'
-        validate_certs: no
-      register: result
-      until: result.status == 200
-      retries: 3
-      delay: 2
+    - name: Validating elasticsearch
+      block:
+        - name: Validating elasticsearch vai HTTPS URL
+          uri:
+            url: "https://localhost:9200"
+            method: GET
+            status_code: '200'
+            user: '{{ es.credentials.admin_user }}'
+            password: '{{ es.credentials.admin_password }}'
+            validate_certs: no
+          register: result
+          until: result.status == 200
+          retries: 3
+          delay: 2
+
+        - name: Validating elasticsearch number of cluster Nodes vai HTTPS URL
+          uri:
+            url: "https://localhost:9200/_cat/nodes?v"
+            method: GET
+            status_code: '200'
+            user: '{{ es.credentials.admin_user }}'
+            password: '{{ es.credentials.admin_password }}'
+            validate_certs: no
+          register: result
+          until: result.status == 200
+          retries: 3
+          delay: 2
       when: es.encrypted_communication.xpack_security_http_ssl_enabled|upper == "TRUE"
 
-    - name: Validating elasticsearch vai URL
-      uri:
-        url: "http://127.0.0.1:9200"
-        method: GET
-        status_code: '200'
-        user: '{{ es.credentials.admin_user }}'
-        password: '{{ es.credentials.admin_password }}'
-        validate_certs: no
-      register: result
-      until: result.status == 200
-      retries: 3
-      delay: 2
+    - name: Validating elasticsearch
+      block:
+        - name: Validating elasticsearch vai HTTP URL
+          uri:
+            url: "http://localhost:9200"
+            method: GET
+            status_code: '200'
+            user: '{{ es.credentials.admin_user }}'
+            password: '{{ es.credentials.admin_password }}'
+            validate_certs: no
+          register: result
+          until: result.status == 200
+          retries: 3
+          delay: 2
+
+        - name: Validating elasticsearch number of cluster Nodes vai HTTP URL
+          uri:
+            url: "http://localhost:9200/_cat/nodes?v"
+            method: GET
+            status_code: '200'
+            user: '{{ es.credentials.admin_user }}'
+            password: '{{ es.credentials.admin_password }}'
+            validate_certs: no
+          register: result
+          until: result.status == 200
+          retries: 3
+          delay: 2
       when: es.encrypted_communication.xpack_security_http_ssl_enabled|upper != "TRUE"  
 
   when: (es.encrypted_communication.xpack_security_transport_ssl_enabled|upper == "TRUE" or es.encrypted_communication.xpack_security_http_ssl_enabled|upper == "TRUE") and es.credentials.xpack_security_enabled|upper == "TRUE"
