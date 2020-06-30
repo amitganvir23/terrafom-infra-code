@@ -4,7 +4,7 @@ path.logs: /var/log/elasticsearch
 node.name: {{ node_name }}
 cluster.name: {{ es.cluster_name}}
 network.host: {{ es.network_host}}
-http.port: {{ http_port }}
+http.port: {{ es.http_port }}
 node.master: {{ node_master }}
 node.data: true
 node.ingest: true
