@@ -112,19 +112,18 @@
             - "{{ es.encrypted_communication.keystore }}"
           delegate_to: "{{ ansible_play_hosts[1] }}"
 
-        - name: coping ca and key files
-          copy:
-            src: "{{ role_path }}/files/{{ item }}"
-            dest: "/tmp/es_{{ inventory_hostname }}/"
-            owner: elasticsearch
-            group: elasticsearch
-          with_items:
-            - "{{ es.encrypted_communication.CA_path }}"
-            - "{{ es.encrypted_communication.keystore }}"
-          when: inventory_hostname != ansible_play_hosts[1]
-
       when: inventory_hostname == ansible_play_hosts[1]
 
+    - name: coping ca and key files
+      copy:
+        src: "{{ role_path }}/files/{{ item }}"
+        dest: "/tmp/es_{{ inventory_hostname }}/"
+        owner: elasticsearch
+        group: elasticsearch
+      with_items:
+        - "{{ es.encrypted_communication.CA_path }}"
+        - "{{ es.encrypted_communication.keystore }}"
+      when: inventory_hostname != ansible_play_hosts[1]
 
     - name: Adding keystore password
       shell: "echo {{ es.encrypted_communication.keystore_password }} | /usr/share/elasticsearch/bin/elasticsearch-keystore add {{ item }} --stdin"
