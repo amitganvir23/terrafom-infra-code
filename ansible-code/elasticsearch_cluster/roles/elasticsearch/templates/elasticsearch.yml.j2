@@ -25,6 +25,5 @@ xpack.security.http.ssl.client_authentication: optional
 
 discovery.zen.ping.unicast.hosts: [{% set comma = joiner(",") %}
 {% for host in groups['all'] -%}
-{{comma()}} "{{ hostvars[host]['inventory_hostname'] }}"
+ {{comma()}} "{{ hostvars[host]['ansible_eth0']['ipv4']['address'] }}"
 {%- endfor %} ]
-

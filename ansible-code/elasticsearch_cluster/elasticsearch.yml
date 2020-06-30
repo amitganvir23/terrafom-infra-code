@@ -3,10 +3,10 @@
   remote_user: ec2-user
   become: true
   become_method: sudo
-  gather_facts: no
+  gather_facts: yes
   tasks:
   - import_role:
-      name: common
+      name: elasticsearch
 
 # - name: Elasticsearch Provisioning
 #   hosts: elasticsearch_master
